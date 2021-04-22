@@ -3,6 +3,5 @@ export enum HttpCode {
   ERROR,
   REQUEST_REFUSED,
   NO_SESSION,
-  REDIRECT_TO_LOGIN,
   UPLOAD_FAILED
 }

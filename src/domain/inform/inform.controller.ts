@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, UploadedFiles, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, UploadedFiles, UseGuards, UseInterceptors } from "@nestjs/common";
 import { InformService } from "./inform.service";
 import { Inform } from "./schema/inform.schema";
 import { stuId } from "../../decorator/session.decorator";
@@ -7,6 +7,8 @@ import { FilesInterceptor } from "@nestjs/platform-express";
 import { Express } from "express";
 import { api } from "../../decorator/api.decorator";
 import { UploadService } from "../../fileUpload/upload.service";
+import { JwtAuthGuard } from "../../authorization/jwt-auth.guard";
+import { logging } from "../../decorator/log.decorator";
 
 
 const dirname = "/home/sipc-ubuntu/project/dist/upload";
@@ -21,6 +23,7 @@ export class InformController {
   @api({
     desc: "某人已读信息，回传至服务器"
   })
+  @UseGuards(JwtAuthGuard)
   @Post("read")
   async read(@Query("informId") informId: number,
              @stuId() stuId: number) {
@@ -36,6 +39,7 @@ export class InformController {
   @api({
     desc: "获取通知详情"
   })
+  @UseGuards(JwtAuthGuard)
   @Get("getInformDetail")
   async getDetail(@Query("informId") informId: number) {
     return this.informService.getByInformId(informId);
@@ -46,6 +50,7 @@ export class InformController {
   @api({
     desc: "添加发布通知"
   })
+  @UseGuards(JwtAuthGuard)
   @Post("addInform")
   async createInform(@inform() inform: Inform,
                      @stuId() stuId: number) {
@@ -55,6 +60,7 @@ export class InformController {
   @api({
     desc: "根据群组获取信息"
   })
+  // @UseGuards(JwtAuthGuard)
   @Get("getMyInformByGroup")
   async getMyInform(@Query("groupId") group: number) {
     return await this.informService.getByGroup(group);
@@ -63,6 +69,7 @@ export class InformController {
   @api({
     desc: "根据时间获取信息"
   })
+  // @UseGuards(JwtAuthGuard)
   @Get("getMyInformByDate")
   async getMyInformByDate(@Query("date") date: string) {
     return await this.informService.getByDate(date);
@@ -72,6 +79,7 @@ export class InformController {
   @api({
     desc: "上传图片"
   })
+  @UseGuards(JwtAuthGuard)
   @Post("uploadImages")
   @UseInterceptors(FilesInterceptor("file"))
   async uploadImages(@UploadedFiles() files: Express.Multer.File[]) {
@@ -81,6 +89,7 @@ export class InformController {
   @api({
     desc: "删除图片"
   })
+  @UseGuards(JwtAuthGuard)
   @Post("deleteUploadedImage")
   async deleteImage(@Body() body: object) {
     return await this.uploadService.delete(dirname, body["img"]);
@@ -89,6 +98,6 @@ export class InformController {
   // @Get("tt")
   // @logging()
   // async test() {
-  //   throw new ResponseError("oooooo");
+  //   throw new ResponseError("11");
   // }
 }

@@ -31,7 +31,7 @@ const dirname = "/home/sipc-ubuntu/project/dist/upload";
     })
   })), ServeStaticModule.forRoot({
     rootPath: dirname,
-    renderPath: "404"
+    renderPath: "233"
   }), AuthorModule, InformModule, RedisModule, UtilsModule, GroupModule, UserModule],
   controllers: [],
   providers: []

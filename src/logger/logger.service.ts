@@ -11,8 +11,8 @@ enum Colors {
 export class CLogger extends Logger {
 
   private static picker(color: Colors, method?: string) {
-    if (method == null) return `${color}[CLogger]      - ${new Date().toLocaleString()}    %s${Colors.Close}`;
-    return `${color}[CLogger]      - ${Colors.Close}${new Date().toLocaleString()}    ${Colors.Yellow}[${method}] ${color}%s${Colors.Close}`;
+    if (method == null) return `${color}[CLogger] - ${new Date().toLocaleString()}    %s${Colors.Close}`;
+    return `${color}[CLogger] - ${Colors.Close}${new Date().toLocaleString()}    ${Colors.Yellow}[${method}] ${color}%s${Colors.Close}`;
   }
 
   _err(msg: any, target?: string) {

@@ -13,14 +13,22 @@ export class ErrorFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
-    const errCode = exception.getStatus();
-    console.log(exception.message);
+    let errCode = null;
+    try {
+      errCode = exception.getStatus();
+    } catch (e) {
+      // 当发现是服务器内部错误时
+      errCode = HttpCode.ERROR;
+    }
     const errMessage = () => {
       if (exception instanceof ResponseError) {
         const jsonErrMsg = exception.getJsonErrMsg();
         if (jsonErrMsg) return jsonErrMsg;
         else return exception.message;
-      } else return "请求方法错误或内部服务器错误";
+      } else {
+        errCode = HttpCode.ERROR;
+        return "请求错误或内部服务器错误";
+      }
     };
 
     const data: ErrorResponse = {
@@ -29,7 +37,7 @@ export class ErrorFilter implements ExceptionFilter {
       errMsg: errMessage()
     };
     response
-      .status(exception instanceof ResponseError ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR)
+      .status(HttpStatus.OK)
       .json(data);
   }
 }

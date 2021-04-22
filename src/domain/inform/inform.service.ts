@@ -4,7 +4,8 @@ import { Inform, InformDocument } from "./schema/inform.schema";
 import { PaginateModel } from "mongoose";
 import { GroupService } from "../group/group.service";
 import { UserService } from "../user/user.service";
-import { ResponseError } from "../../error/custom.error";
+import { paginate } from "../../decorator/paginate.decorator";
+import { logging } from "../../decorator/log.decorator";
 
 
 @Injectable()
@@ -25,21 +26,18 @@ export class InformService {
     });
   };
 
+  @logging()
+  @paginate()
   async getAll(page: number = 1): Promise<Object> {
     const opts = {
       page: page,
       limit: 5
     };
-    return this.informModel.paginate(this.informModel.find(), opts).then(r => {
-      return {
-        docs: r.docs,
-        nowPage: Number(r.page).valueOf(),
-        pageTotal: r.pages,
-        itemTotal: r.total
-      };
-    });
+    return this.informModel.paginate(this.informModel.find(), opts);
   }
 
+  @logging()
+  @paginate()
   async getByGroup(groupId: number, page: number = 1): Promise<Object> {
     const opts = {
       page: page,
@@ -47,24 +45,23 @@ export class InformService {
     };
     return this.informModel.paginate(this.informModel.find({
       relatedGroupId: { $elemMatch: { $eq: groupId } }
-    }), opts).then(r => {
-      return {
-        docs: r.docs,
-        nowPage: Number(r.page).valueOf(),
-        pageTotal: r.pages,
-        itemTotal: r.total
-      };
-    });
+    }), opts);
   }
 
-  async getByInformId(informId: number): Promise<[Inform, string]> {
+  async getByInformId(informId: number): Promise<Object> {
+    // if (typeof informId == "string") informId = Number.parseInt(informId);
     let res = await this.informModel.findOne({
       informId: informId
     });
     const name = await this.userService.getRealNameByStuId(res.creator);
-    return [res, name];
+    return {
+      res,
+      name
+    };
   }
 
+  @logging()
+  @paginate()
   async getByDate(date: string, page: number = 1): Promise<Object> {
     const opts = {
       page: page,
@@ -72,14 +69,7 @@ export class InformService {
     };
     return this.informModel.paginate(this.informModel.find({
       createTime: date
-    }), opts).then(r => {
-      return {
-        docs: r.docs,
-        nowPage: Number(r.page).valueOf(),
-        pageTotal: r.pages,
-        itemTotal: r.total
-      };
-    });
+    }), opts);
   }
 
   // async getByDateByGroups(date: string, groups: number[]) {
@@ -103,11 +93,12 @@ export class InformService {
   //   return await f;
   // }
 
+  @logging({
+    errMsg: "创建通知失败！"
+  })
   async insert(inform: Inform, stuId: number): Promise<Inform> {
     inform.creator = stuId;
-    return new this.informModel(inform).save().catch(() => {
-      throw new ResponseError("创建通知失败！");
-    });
+    return new this.informModel(inform).save();
   }
 
   async update(inform: Inform): Promise<boolean> {

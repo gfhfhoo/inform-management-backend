@@ -4,6 +4,7 @@ import { EntityManager } from "typeorm";
 import { GroupService } from "../group/group.service";
 import { ResponseError } from "../../error/custom.error";
 import { RedisService } from "../../redis/redis.service";
+import { logging } from "../../decorator/log.decorator";
 
 @Injectable()
 export class UserService {
@@ -30,16 +31,22 @@ export class UserService {
     return res.real_name;
   }
 
+  @logging()
   async bindUser(session: string, realName: string, stuId: number) {
+    let wxid = null;
+    try {
+      wxid = (await this.redisService.get(session))["openId"];
+    } catch (e) {
+      throw new ResponseError("该Session不包含用户唯一ID信息！是否已经注册过？");
+    }
+    const queryRes = await this.getStuIdByOpenId(wxid);
+    console.log(queryRes);
+    if (queryRes.length != 0) throw new ResponseError("绑定用户时发生未知错误！可能重复进行了注册。");
     const user = {
       stu_id: stuId,
-      wxid: (await this.redisService.get(session))["openId"],
+      wxid: wxid,
       real_name: realName
     } as Users;
-    try {
-      await this.userRepo.insert(Users, user);
-    } catch (e) {
-      throw new ResponseError("绑定用户时发生未知错误！");
-    }
+    await this.userRepo.insert(Users, user);
   }
 }
