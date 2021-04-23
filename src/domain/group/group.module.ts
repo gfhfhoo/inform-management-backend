@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { forwardRef, Module } from "@nestjs/common";
 import { UtilsModule } from "../../utils/utils.module";
 import { RedisModule } from "../../redis/redis.module";
 import { GroupService } from "./group.service";
@@ -8,6 +8,7 @@ import { Connection } from "mongoose";
 import * as AutoIncrementFactory from "mongoose-sequence";
 import * as mongoosePaginate from "mongoose-paginate";
 import { Group, GroupSchema } from "./schema/group.schema";
+import { UserModule } from "../user/user.module";
 
 @Module({
   imports: [MongooseModule.forFeatureAsync([{
@@ -24,7 +25,7 @@ import { Group, GroupSchema } from "./schema/group.schema";
       return schema;
     },
     inject: [getConnectionToken()]
-  }]), UtilsModule, RedisModule],
+  }]), UtilsModule, RedisModule, forwardRef(() => UserModule)],
   controllers: [GroupController],
   providers: [GroupService],
   exports: [GroupService]

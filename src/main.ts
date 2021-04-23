@@ -2,7 +2,6 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { ResponseInterceptor } from "./interceptor/response.interceptor";
 import { ErrorFilter } from "./interceptor/error.filter";
-import { Logger } from "@nestjs/common";
 import { CLogger } from "./logger/logger.service";
 
 async function bootstrap() {

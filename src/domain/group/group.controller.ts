@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from "@nestjs/common";
+import { Controller, Get, Post, Query } from "@nestjs/common";
 import { GroupService } from "./group.service";
 import { Group } from "./schema/group.schema";
 import { group } from "../../decorator/group.decorator";
@@ -58,8 +58,25 @@ export class GroupController {
     desc: "邀请进群"
   })
   @Get("invite")
-  async invite(@Body() body: object) {
-    const friendStuId = body["friendStuId"];
+  async invite(@Query("friendStuId") stuId: number) {
     // to do
+  }
+
+  @api({
+    desc: "添加管理员"
+  })
+  @Get("addAdmin")
+  async addAdmin(@Query("userId") newAdminStuId: number,
+                 @Query("groupId") groupId: number,
+                 @stuId() stuId: number) {
+    return await this.groupService.addAdmin(stuId, newAdminStuId, groupId);
+  }
+
+  @api({
+    desc: "获取我所管理的群组列表"
+  })
+  @Get("getMyAdminGroup")
+  async getMyAdminGroup(@stuId() stuId: number) {
+    return await this.groupService.getMyAdminOfGroups(stuId);
   }
 }

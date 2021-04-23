@@ -1,5 +1,6 @@
 import { Document } from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { GroupElement } from "../../group/schema/group.schema";
 
 export type InformDocument = Inform & Document
 
@@ -34,11 +35,15 @@ export class Inform {
   @Prop({
     required: true
   })
+  creatorName: string;
+  @Prop({
+    required: true
+  })
   content: string;
   @Prop({
     required: true
   })
-  relatedGroupId: number[];
+  relatedGroup: GroupElement[];
   @Prop({
     required: true
   })
@@ -57,3 +62,20 @@ export class Inform {
 }
 
 export const InformSchema = SchemaFactory.createForClass(Inform);
+
+export class InformInte {
+
+  informId: number;
+  title: string;
+  creator: number;
+  creatorName: string;
+  content: string;
+  relatedGroup: GroupElement[];
+  createTime: string;
+  deadline: string = null;
+  tag: string[] = [];
+  priority: number = 0;
+  hasRead: number[] = [];
+  resources: string[] = [];
+
+}

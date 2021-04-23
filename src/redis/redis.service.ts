@@ -10,7 +10,11 @@ export class RedisService {
     return this.cacheManager.get(key);
   }
 
-  async add(key: any, val: any, ttl?: number) {
+  async add(key: any, val: any, ttl: number = 0) {
     await this.cacheManager.set(key, val, { ttl: ttl });
+  }
+
+  async del(key: any) {
+    await this.cacheManager.del(key);
   }
 }

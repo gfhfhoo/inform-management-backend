@@ -1,4 +1,5 @@
 import { Injectable, Logger, Scope } from "@nestjs/common";
+import DateTimeFormatOptions = Intl.DateTimeFormatOptions;
 
 enum Colors {
   Red = "\x1b[31m",
@@ -7,12 +8,28 @@ enum Colors {
   Close = "\x1b[0m"
 }
 
+const dateOption: DateTimeFormatOptions = {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "numeric",
+  minute: "numeric",
+  second: "numeric"
+};
+
 @Injectable({ scope: Scope.TRANSIENT })
 export class CLogger extends Logger {
 
   private static picker(color: Colors, method?: string) {
-    if (method == null) return `${color}[CLogger] - ${new Date().toLocaleString()}    %s${Colors.Close}`;
-    return `${color}[CLogger] - ${Colors.Close}${new Date().toLocaleString()}    ${Colors.Yellow}[${method}] ${color}%s${Colors.Close}`;
+    const str = (method ? `${Colors.Yellow}[${method}]${Colors.Close}` : ``) + `${color}`;
+    switch (color) {
+      case Colors.Blue:
+        return `${color}[CLogger] - INFO - ${Colors.Close}${new Date().toLocaleString(undefined, dateOption)}  ${str}%s${Colors.Close}`;
+      case Colors.Yellow:
+        return `${color}[CLogger] - WARN - ${Colors.Close}${new Date().toLocaleString(undefined, dateOption)}  ${str}%s${Colors.Close}`;
+      case Colors.Red:
+        return `${color}[CLogger] - ERROR - ${Colors.Close}${new Date().toLocaleString(undefined, dateOption)}  ${str}%s${Colors.Close}`;
+    }
   }
 
   _err(msg: any, target?: string) {
@@ -21,5 +38,9 @@ export class CLogger extends Logger {
 
   _info(msg: any, target?: string) {
     console.log(CLogger.picker(Colors.Blue, target), msg);
+  }
+
+  _warn(msg: any, target?: string) {
+    console.log(CLogger.picker(Colors.Yellow, target), msg);
   }
 }

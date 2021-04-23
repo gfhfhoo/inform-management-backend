@@ -43,9 +43,14 @@ export class InformService {
       page: page,
       limit: 5
     };
-    return this.informModel.paginate(this.informModel.find({
-      relatedGroupId: { $elemMatch: { $eq: groupId } }
-    }), opts);
+    return new Promise(((resolve, reject) => {
+      this.informModel.find({
+        relatedGroupId: { $elemMatch: { groupName: groupId } }
+      }).exec((err, data) => {
+        if (err) reject(err);
+        else resolve(this.informModel.paginate(data, opts));
+      });
+    }));
   }
 
   async getByInformId(informId: number): Promise<Object> {
@@ -54,15 +59,12 @@ export class InformService {
       informId: informId
     });
     const name = await this.userService.getRealNameByStuId(res.creator);
-    return {
-      res,
-      name
-    };
+    return { res, name };
   }
 
   @logging()
   @paginate()
-  async getByDate(date: string, page: number = 1): Promise<Object> {
+  async getByDate(date: string, page: number = 1): Promise<any> {
     const opts = {
       page: page,
       limit: 5
@@ -98,6 +100,12 @@ export class InformService {
   })
   async insert(inform: Inform, stuId: number): Promise<Inform> {
     inform.creator = stuId;
+    inform.creatorName = await this.userService.getRealNameByStuId(stuId);
+    const mapping = await this.groupService.getGroupElement() as any[];
+    for (let group of inform.relatedGroup) {
+      group.groupName = mapping.find(x => (x.groupId == group.groupId)).groupName;
+    }
+    console.log(inform);
     return new this.informModel(inform).save();
   }
 

@@ -34,6 +34,8 @@ export const logging = (options?: LoggingOptions): MethodDecorator => {
         } else nativeErrMsg = obj.message; //  抛出是服务器内部错误
       });
       if (isErr) {
+        //DEV
+        new CLogger()._err(nativeErrMsg);
         // 抛出异常信息优先级：用户装饰器自定义--->手动抛出ResponseError--->系统全局Error
         if (options.errMsg) throw new ResponseError(options.errMsg, options.statusCode);
         else if (nativeErrMsg && nativeStatusCode) throw new ResponseError(nativeErrMsg, nativeStatusCode);

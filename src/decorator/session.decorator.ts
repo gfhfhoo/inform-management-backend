@@ -1,23 +1,27 @@
-import { BadRequestException, createParamDecorator, ExecutionContext } from "@nestjs/common";
+import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 import * as crypto from "crypto-js";
+import { ResponseError } from "../error/custom.error";
+import { HttpCode } from "../enum/httpCode.enum";
+
+function getSession(ctx: ExecutionContext) {
+  const req = ctx.switchToHttp().getRequest();
+  const session = req.headers["session"] as string;
+  if (session == null || session == "") throw new ResponseError("没有Session会话！", HttpCode.NO_SESSION);
+  else return session;
+}
 
 export const session = createParamDecorator(
   (data: string, ctx: ExecutionContext) => {
-    const req = ctx.switchToHttp().getRequest();
-    const session = req.headers["session"] as string;
-    if (session == null || session == "") throw new BadRequestException("没有Session会话！");
-    else return session;
+    return getSession(ctx);
   }
 );
 
 export const stuId = createParamDecorator(
   (data: number, ctx: ExecutionContext) => {
-    const req = ctx.switchToHttp().getRequest();
-    const session = req.headers["session"] as string;
-    if (session == null || session == "") throw new BadRequestException("没有Session会话！");
+    const session = getSession(ctx);
     const payload = session.split(".")[1];
-    const obj = crypto.enc.Base64.parse(payload).toString(crypto.enc.Utf8);
-    if (obj == null) throw new BadRequestException("Session信息解析不全！");
+    const obj = JSON.parse(crypto.enc.Base64.parse(payload).toString(crypto.enc.Utf8));
+    if (obj == null) throw new ResponseError("Session信息解析不全！", HttpCode.REQUEST_REFUSED);
     return obj["stuId"];
   }
 );

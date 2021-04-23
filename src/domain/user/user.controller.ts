@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Get, Post } from "@nestjs/common";
 import { session, stuId } from "../../decorator/session.decorator";
 import { UserService } from "./user.service";
 import { api } from "../../decorator/api.decorator";
@@ -15,5 +15,10 @@ export class UserController {
   async bindUser(@Body() body: object,
                  @session() session: string) {
     return await this.userService.bindUser(session, body["realName"], body["stuId"]);
+  }
+
+  @Get("getMyStuId")
+  async getMyStuId(@stuId() stuId: number) {
+    return stuId;
   }
 }

@@ -28,11 +28,13 @@ export class AuthService {
     // 检查微信返回是否包含了用户信息
     if (sessionKey == null || openId == null) throw new ResponseError("服务端请求错误，请过一会重试。");
     // 根据微信用户唯一标识换取数据库学号信息
-    const stuId = await this.userService.getStuIdByOpenId(openId);
+    const queryRes = (await this.userService.getStuIdByOpenId(openId))[0];
+    let stuId = null;
+    if (queryRes) stuId = queryRes.stu_id;
     // 生成本地三方Key
     const thirdKey = await this.utils.nextKey();
     // 判断stuId是否不存在
-    if (stuId.length == 0) {
+    if (stuId == null) {
       // 抛出异常，返回给用户提示需要进行绑定
       // 临时绑定的一个小Value，包含OpenId
       const bindTip = {
@@ -58,6 +60,7 @@ export class AuthService {
     await this.redisService.add(thirdKey, val, 173000);
     return {
       session: token,
+      stuId: stuId,
       isRegister: true
     };
   }

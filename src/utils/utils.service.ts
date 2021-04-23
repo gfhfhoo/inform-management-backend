@@ -30,7 +30,7 @@ export class UtilsService {
     return code.join("");
   }
 
-  async dateCompare(v1: string, v2: string): Promise<number> {
+  async dateCompare(v1: string | Date, v2: string | Date): Promise<number> {
     const date1 = new Date(v1);
     const date2 = new Date(v2);
     if (date1 < date2) return -1;

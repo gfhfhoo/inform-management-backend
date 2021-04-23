@@ -10,6 +10,7 @@ import { InformService } from "./inform.service";
 import { GroupModule } from "../group/group.module";
 import { UserModule } from "../user/user.module";
 import { UploadModule } from "../../fileUpload/upload.module";
+import { RedisModule } from "../../redis/redis.module";
 
 @Module({
   imports: [MongooseModule.forFeatureAsync([{

@@ -8,8 +8,6 @@ import { Express } from "express";
 import { api } from "../../decorator/api.decorator";
 import { UploadService } from "../../fileUpload/upload.service";
 import { JwtAuthGuard } from "../../authorization/jwt-auth.guard";
-import { logging } from "../../decorator/log.decorator";
-
 
 const dirname = "/home/sipc-ubuntu/project/dist/upload";
 
@@ -17,6 +15,13 @@ const dirname = "/home/sipc-ubuntu/project/dist/upload";
 export class InformController {
   constructor(private readonly informService: InformService,
               private readonly uploadService: UploadService) {
+  }
+
+  private wrap(source: any) {
+    source.docs = source.docs.map(d => ({
+      ...d._doc, isRead: d.hasRead.includes(stuId)
+    }));
+    return source;
   }
 
   // TESTED
@@ -63,16 +68,19 @@ export class InformController {
   // @UseGuards(JwtAuthGuard)
   @Get("getMyInformByGroup")
   async getMyInform(@Query("groupId") group: number) {
-    return await this.informService.getByGroup(group);
+    const res = await this.informService.getByGroup(group);
+    return this.wrap(res);
   }
 
   @api({
     desc: "根据时间获取信息"
   })
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get("getMyInformByDate")
-  async getMyInformByDate(@Query("date") date: string) {
-    return await this.informService.getByDate(date);
+  async getMyInformByDate(@Query("date") date: string,
+                          @stuId() stuId: number) {
+    const res = await this.informService.getByDate(date);
+    return this.wrap(res);
   }
 
 

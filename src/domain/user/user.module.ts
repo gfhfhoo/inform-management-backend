@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { forwardRef, Module } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { Users } from "./user.entity";
@@ -7,7 +7,7 @@ import { RedisModule } from "../../redis/redis.module";
 import { UserController } from "./user.controller";
 
 @Module({
-  imports: [GroupModule, RedisModule, TypeOrmModule.forFeature([Users])],
+  imports: [forwardRef(() => GroupModule), RedisModule, TypeOrmModule.forFeature([Users])],
   controllers: [UserController],
   providers: [UserService],
   exports: [UserService]

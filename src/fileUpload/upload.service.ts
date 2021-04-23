@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { ResponseError } from "../error/custom.error";
 import { HttpCode } from "../enum/httpCode.enum";
-import fs, { createWriteStream } from "fs";
-import path from "path";
+import * as fs from "fs";
+import * as path from "path";
 import { Express } from "express";
 import { UtilsService } from "../utils/utils.service";
 
@@ -18,7 +18,7 @@ export class UploadService {
     for (const file of files) {
       const hash = await this.utils.nextHash();
       const fileName = `${hash}${path.extname(file.originalname)}`;
-      const img = createWriteStream(path.join(dirname, fileName));
+      const img = fs.createWriteStream(path.join(dirname, fileName));
       try {
         img.write(file.buffer);
       } catch (e) {

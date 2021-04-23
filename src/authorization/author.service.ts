@@ -1,5 +1,4 @@
 import { HttpService, Injectable } from "@nestjs/common";
-import { ResponseError } from "../error/custom.error";
 
 @Injectable()
 export class AuthorService {

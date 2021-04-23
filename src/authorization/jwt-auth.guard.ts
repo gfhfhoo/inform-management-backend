@@ -11,9 +11,8 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
   }
 
   handleRequest(err, user, info): any {
-    console.log(err, user, info);
     if (err || !user) {
-      throw new ResponseError("无有效的Session会话！", HttpCode.NO_SESSION);
+      throw new ResponseError("该Session不是有效的会话！", HttpCode.NO_SESSION);
     }
   }
 }

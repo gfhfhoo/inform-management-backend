@@ -1,6 +1,11 @@
 import { Document } from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 
+export interface GroupElement {
+  groupId: number,
+  groupName: string
+}
+
 export type GroupDocument = Group & Document
 
 function de(json, ins) {
@@ -11,7 +16,7 @@ function de(json, ins) {
         const year = date.getFullYear();
         const month = date.getMonth().toString().padStart(2, "0");
         const day = date.getDate().toString().padStart(2, "0");
-        ins[prop] = "${year}-${month}-${day}";
+        ins[prop] = `${year}-${month}-${day}`;
       }
       continue;
     }
@@ -36,6 +41,10 @@ export class Group {
     required: true
   })
   creator: number;
+  @Prop({
+    required: true
+  })
+  creatorName: string;
   @Prop()
   createTime: string;
   @Prop({
@@ -44,6 +53,10 @@ export class Group {
   members: number[] = [];
   @Prop()
   avatarImg: string;
+  @Prop({
+    required: true
+  })
+  admins: number[] = [];
 
 }
 

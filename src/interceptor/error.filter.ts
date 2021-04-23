@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
 import { HttpCode } from "../enum/httpCode.enum";
 import { ResponseError } from "../error/custom.error";
+import { CLogger } from "../logger/logger.service";
 
 interface ErrorResponse {
   code: HttpCode,
