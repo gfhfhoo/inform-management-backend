@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
-import { session, stuId } from "../../decorator/session.decorator";
+import { stuId } from "../../decorator/session.decorator";
 import { UserService } from "./user.service";
 import { api } from "../../decorator/api.decorator";
 
@@ -9,12 +9,11 @@ export class UserController {
   }
 
   @api({
-    desc: "绑定用户"
+    desc: "使用JsCode获取OpenId来绑定用户"
   })
   @Post("bindUser")
-  async bindUser(@Body() body: object,
-                 @session() session: string) {
-    return await this.userService.bindUser(session, body["realName"], body["stuId"]);
+  async bindUser(@Body() body: object) {
+    return await this.userService.bindUser(body["jsCode"], body["realName"], body["stuId"]);
   }
 
   @Get("getMyStuId")

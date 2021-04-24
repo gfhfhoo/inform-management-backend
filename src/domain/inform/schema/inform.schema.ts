@@ -7,13 +7,15 @@ export type InformDocument = Inform & Document
 function de(json, ins) {
   for (const prop in json) {
     if (!json.hasOwnProperty(prop)) continue;
-    ins[prop] = json[prop];
+    if (prop == "deadline") { // 处理deadline时间戳
+      ins[prop] = +new Date(json[prop]).getTime() + 86399000; // 锁定23:59:59
+    } else ins[prop] = json[prop];
   }
   const date = new Date();
   const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const day = date.getDate().toString().padStart(2, "0");
-  ins["createTime"] = `${year}-${month}-${day}`;
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  ins["createTime"] = new Date(`${year}/${month}/${day}`).getTime();
 }
 
 @Schema()
@@ -47,9 +49,9 @@ export class Inform {
   @Prop({
     required: true
   })
-  createTime: string;
+  createTime: number;
   @Prop()
-  deadline: string = null;
+  deadline: number = null;
   @Prop()
   tag: string[] = [];
   @Prop()
@@ -62,20 +64,3 @@ export class Inform {
 }
 
 export const InformSchema = SchemaFactory.createForClass(Inform);
-
-export class InformInte {
-
-  informId: number;
-  title: string;
-  creator: number;
-  creatorName: string;
-  content: string;
-  relatedGroup: GroupElement[];
-  createTime: string;
-  deadline: string = null;
-  tag: string[] = [];
-  priority: number = 0;
-  hasRead: number[] = [];
-  resources: string[] = [];
-
-}

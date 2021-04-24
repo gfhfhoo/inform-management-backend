@@ -1,17 +1,19 @@
 import { Column, Entity, PrimaryColumn } from "typeorm";
 
+export type UserElement = Pick<Users, "stuId" | "realName">
+
 @Entity()
 export class Users {
   constructor(id: string | number) {
     if (typeof id === "string") this.wxid = id;
-    else this.stu_id = id;
+    else this.stuId = id;
   }
 
   @PrimaryColumn()
-  stu_id: number;
+  stuId: number;
 
   @Column()
-  real_name: string;
+  realName: string;
 
   @Column()
   wxid: string;

@@ -18,6 +18,7 @@ export class GroupService {
               @Inject(forwardRef(() => UserService)) private readonly userService: UserService) {
   }
 
+  @logging()
   async getGroupElement() {
     const cache = await this.redis.get("group_cache") as object[];
     if (cache) return cache;
@@ -27,16 +28,19 @@ export class GroupService {
     }
   }
 
+  @logging()
   async isExisted(id: number): Promise<boolean> {
     const res = await this.getGroupDetail(id);
     return res != null;
   }
 
+  @logging()
   async isNumberExisted(stuId: number, groupId: number): Promise<boolean> {
     const res = await this.getGroupDetail(groupId);
     return res.members.includes(stuId);
   }
 
+  @logging()
   async generateFriendCode(id: number): Promise<string> {
     // check if groupId available
     if (await this.isExisted(id)) {
@@ -50,6 +54,7 @@ export class GroupService {
     } else throw new ResponseError("群组ID非法", HttpCode.REQUEST_REFUSED);
   };
 
+  @logging()
   async getMyGroups(stuId: number): Promise<object[]> {
     let res = [];
     const groups: any[] = await new Promise(((resolve, reject) => {
@@ -60,34 +65,37 @@ export class GroupService {
         else resolve(data);
       });
     }));
-    console.log(groups);
     groups.map((value => {
       res.push(<GroupElement>{
         groupId: value.groupId,
-        groupName: value.name
+        name: value.name
       });
     }));
     return res;
   }
 
+  @logging()
   async getGroupDetail(groupId: number): Promise<Group> {
     return this.groupModel.findOne({
       groupId: groupId
     });
   }
 
+  @logging()
   async enterGroupByCode(code: string, stuId: number): Promise<boolean> {
-    const res = (await this.redis.get(code))["groupId"];
+    if (!code) throw new ResponseError("邀请码不存在！", HttpCode.NO_SESSION);
+    const res = (<GroupElement>await this.redis.get(code));
     if (res) {
       const group = await this.groupModel.findOne({
-        groupId: res
+        groupId: res.groupId
       });
-      group.members.push(stuId);
+      if (!group.members.find(x => (x == stuId))) group.members.push(stuId); // 确保添加的用户不在群组里
+      else throw new ResponseError("非法请求！");
       await this.groupModel.updateOne({
-        groupId: res
+        groupId: res.groupId
       }, group);
-      return true;
-    } else return false;
+      return null;
+    } else throw new ResponseError("邀请码有误！");
   }
 
   @logging()
@@ -105,7 +113,7 @@ export class GroupService {
     for (let group of queryRes) {
       mapping.push({
         groupId: group.groupId,
-        groupName: group.name
+        name: group.name
       });
     }
     await this.redis.del("group_cache");
@@ -137,7 +145,7 @@ export class GroupService {
     return groups.map(value => {
       return <GroupElement>{
         groupId: value.groupId,
-        groupName: value.name
+        name: value.name
       };
     });
   }

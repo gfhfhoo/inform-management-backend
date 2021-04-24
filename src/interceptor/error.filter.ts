@@ -28,6 +28,7 @@ export class ErrorFilter implements ExceptionFilter {
         else return exception.message;
       } else {
         errCode = HttpCode.ERROR;
+        new CLogger()._err(exception.message);
         return "请求错误或内部服务器错误";
       }
     };

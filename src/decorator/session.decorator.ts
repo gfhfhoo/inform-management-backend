@@ -3,6 +3,7 @@ import * as crypto from "crypto-js";
 import { ResponseError } from "../error/custom.error";
 import { HttpCode } from "../enum/httpCode.enum";
 
+// 这里的所有装饰器配合UserGuard使用
 function getSession(ctx: ExecutionContext) {
   const req = ctx.switchToHttp().getRequest();
   const session = req.headers["session"] as string;

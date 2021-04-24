@@ -1,4 +1,4 @@
-import { HttpModule, Module } from "@nestjs/common";
+import { forwardRef, HttpModule, Module } from "@nestjs/common";
 import { AuthorService } from "./author.service";
 import { AuthService } from "./auth.service";
 import { JwtModule } from "@nestjs/jwt";
@@ -17,7 +17,7 @@ import { UserModule } from "../domain/user/user.module";
         expiresIn: "2d"
       }
     })
-  }), RedisModule, UserModule, UtilsModule],
+  }), RedisModule, forwardRef(() => UserModule), UtilsModule],
   controllers: [AuthorController],
   providers: [AuthorService, AuthService, JwtStrategy],
   exports: [AuthorService, AuthService]

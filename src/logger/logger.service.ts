@@ -21,7 +21,7 @@ const dateOption: DateTimeFormatOptions = {
 export class CLogger extends Logger {
 
   private static picker(color: Colors, method?: string) {
-    const str = (method ? `${Colors.Yellow}[${method}]${Colors.Close}` : ``) + `${color}`;
+    const str = (method ? `${Colors.Yellow}[${method}]${Colors.Close} ` : ``) + `${color}`;
     switch (color) {
       case Colors.Blue:
         return `${color}[CLogger] - INFO - ${Colors.Close}${new Date().toLocaleString(undefined, dateOption)}  ${str}%s${Colors.Close}`;

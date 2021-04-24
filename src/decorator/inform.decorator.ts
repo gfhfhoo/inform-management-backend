@@ -5,12 +5,14 @@ import { GroupElement } from "../domain/group/schema/group.schema";
 export const inform = createParamDecorator(
   (data: Inform, ctx: ExecutionContext) => {
     const obj = ctx.switchToHttp().getRequest().body;
-    const groupIds: number[] = obj["relatedGroupId"];
+    console.log(obj);
+    const groupIds: number[] = obj["relatedGroup"];
+    console.log(groupIds);
     let relatedGroup: GroupElement[] = [];
     for (let groupId of groupIds) {
       relatedGroup.push({
         groupId: groupId,
-        groupName: ""
+        name: ""
       });
     }
     obj["relatedGroup"] = relatedGroup;

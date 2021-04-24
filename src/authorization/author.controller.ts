@@ -7,7 +7,7 @@ export class AuthorController {
   }
 
   @Get("login")
-  async login(@Query("js_code") code: string) {
+  async login(@Query("js_code") code: string): Promise<any> {
     return await this.authService.login(code);
   }
 

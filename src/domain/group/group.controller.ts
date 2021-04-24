@@ -17,7 +17,7 @@ export class GroupController {
   @Post("createGroup")
   async createGroup(@group() group: Group,
                     @stuId() stuId: number) {
-    return await this.groupService.insert(group, stuId);
+    await this.groupService.insert(group, stuId);
   }
 
   @api({
@@ -52,14 +52,6 @@ export class GroupController {
   async enterGroupByCode(@Query("friendCode") code: string,
                          @stuId() stuId: number) {
     return await this.groupService.enterGroupByCode(code, stuId);
-  }
-
-  @api({
-    desc: "邀请进群"
-  })
-  @Get("invite")
-  async invite(@Query("friendStuId") stuId: number) {
-    // to do
   }
 
   @api({

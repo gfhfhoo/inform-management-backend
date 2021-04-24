@@ -1,16 +1,18 @@
 import { forwardRef, Inject, Injectable } from "@nestjs/common";
-import { Users } from "./user.entity";
+import { UserElement, Users } from "./user.entity";
 import { EntityManager } from "typeorm";
 import { GroupService } from "../group/group.service";
 import { ResponseError } from "../../error/custom.error";
 import { RedisService } from "../../redis/redis.service";
 import { logging } from "../../decorator/log.decorator";
 import { CLogger } from "../../logger/logger.service";
+import { AuthorService } from "../../authorization/author.service";
 
 @Injectable()
 export class UserService {
   constructor(private userRepo: EntityManager,
               private readonly redisService: RedisService,
+              @Inject(forwardRef(() => AuthorService)) private readonly authorService: AuthorService,
               @Inject(forwardRef(() => GroupService)) private readonly groupService: GroupService) {
   }
 
@@ -23,7 +25,7 @@ export class UserService {
   }
 
   async getStuIdByOpenId(openId: string) {
-    return this.userRepo.query(`SELECT stu_id FROM users WHERE wxid = "${openId}"`);
+    return this.userRepo.query(`SELECT stuId FROM users WHERE wxid = "${openId}"`);
   }
 
   async getGroupsByStuId(stuId: number) {
@@ -31,36 +33,34 @@ export class UserService {
   }
 
   async isExistedByStuId(stuId: number) {
-    return (await this.userRepo.query(`SELECT * FROM users WHERE stu_id = "${stuId}"`))[0];
+    return (await this.userRepo.query(`SELECT * FROM users WHERE stuId = "${stuId}"`))[0];
   }
 
   async getRealNameByStuId(stuId: number) {
     if (stuId == null) throw new ResponseError("请求结果失败");
-    const cache = await this.redisService.get("user_cache") as object[];
+    const cache = <UserElement[]>await this.redisService.get("user_cache");
     if (cache) {
-      const cache_res = cache.find(x => (x["stuId"] == stuId));
-      if (cache_res) return cache_res["realName"];
+      const cache_res = cache.find(x => (x.stuId == stuId));
+      if (cache_res) return cache_res.realName;
     }
     await this.updateUserCache();
     const res = await this.isExistedByStuId(stuId);
     if (res == null) throw new ResponseError("请求结果失败");
-    return res.real_name;
+    return res.realName;
   }
 
   @logging()
-  async bindUser(session: string, realName: string, stuId: number) {
+  async bindUser(jsCode: string, realName: string, stuId: number) {
     let wxid = null;
-    try {
-      wxid = (await this.redisService.get(session))["openId"];
-    } catch (e) {
-      throw new ResponseError("该Session不包含用户唯一ID信息！是否已经注册过？");
-    }
+    const openId = (await this.authorService.requestWx(jsCode)).data["openid"];
+    if (openId == null) throw new ResponseError("服务端向微信请求JS_CODE时发生错误，请过一会重试。");
+    wxid = openId;
     const queryRes = await this.getStuIdByOpenId(wxid);
     if (queryRes.length != 0) throw new ResponseError("绑定用户时发生未知错误！可能重复进行了注册。");
     const user = {
-      stu_id: stuId,
+      stuId: stuId,
       wxid: wxid,
-      real_name: realName
+      realName: realName
     } as Users;
     await this.userRepo.insert(Users, user);
     new CLogger()._info("服务器正在同步新用户.......");
@@ -72,8 +72,8 @@ export class UserService {
     let mapping = [];
     for (let student of students) {
       let t = {};
-      t["stuId"] = student.stu_id;
-      t["realName"] = student.real_name;
+      t["stuId"] = student.stuId;
+      t["realName"] = student.realName;
       mapping.push(t);
     }
     await this.redisService.del("user_cache");

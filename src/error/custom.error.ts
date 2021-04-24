@@ -1,6 +1,7 @@
 import { HttpException } from "@nestjs/common";
 import { HttpCode } from "../enum/httpCode.enum";
 
+
 export class ResponseError extends HttpException {
   private readonly jsonErrMsg = null;
   private readonly errMsg = null;

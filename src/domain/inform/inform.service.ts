@@ -6,6 +6,9 @@ import { GroupService } from "../group/group.service";
 import { UserService } from "../user/user.service";
 import { paginate } from "../../decorator/paginate.decorator";
 import { logging } from "../../decorator/log.decorator";
+import { Order, OrderToField } from "../../enum/order.enum";
+import { ResponseError } from "../../error/custom.error";
+import { HttpCode } from "../../enum/httpCode.enum";
 
 
 @Injectable()
@@ -15,25 +18,41 @@ export class InformService {
               private readonly userService: UserService) {
   }
 
-  fn = async (groupId, date) => {
-    return new Promise(resolve => {
-      this.informModel.find({
-        relatedGroupId: { $elemMatch: { $eq: groupId } },
-        createTime: date
-      }).exec((err, data) => {
-        if (!err) resolve(data);
-      });
-    });
-  };
+  standardizeTime(timestamp: number) {
+    if (!timestamp) return null;
+    const date = new Date(timestamp);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
 
   @logging()
   @paginate()
-  async getAll(page: number = 1): Promise<Object> {
+  async getAll(page: number = 1): Promise<any> {
     const opts = {
       page: page,
       limit: 5
     };
     return this.informModel.paginate(this.informModel.find(), opts);
+  }
+
+  @logging()
+  async getMyAllInform(stuId: number, order: Order): Promise<any> {
+    const map = OrderToField(order);
+    let groups = await this.userService.getGroupsByStuId(stuId);
+    if (groups == null) throw new ResponseError("该用户学号错误或未添加群组！", HttpCode.REQUEST_REFUSED);
+    groups = groups.map((value: any) => {
+      return value.groupId;
+    });
+    return await new Promise(((resolve, reject) => {
+      this.informModel.find({
+        relatedGroup: { $elemMatch: { groupId: { $in: groups } } }
+      }).sort(map).exec(((err, data) => {
+        if (err) reject(err);
+        else resolve({ docs: data });
+      }));
+    }));
   }
 
   @logging()
@@ -45,7 +64,7 @@ export class InformService {
     };
     return new Promise(((resolve, reject) => {
       this.informModel.find({
-        relatedGroupId: { $elemMatch: { groupName: groupId } }
+        relatedGroup: { $elemMatch: { groupId: { $eq: groupId } } }
       }).exec((err, data) => {
         if (err) reject(err);
         else resolve(this.informModel.paginate(data, opts));
@@ -53,6 +72,7 @@ export class InformService {
     }));
   }
 
+  @logging()
   async getByInformId(informId: number): Promise<Object> {
     // if (typeof informId == "string") informId = Number.parseInt(informId);
     let res = await this.informModel.findOne({
@@ -64,36 +84,15 @@ export class InformService {
 
   @logging()
   @paginate()
-  async getByDate(date: string, page: number = 1): Promise<any> {
+  async getByDate(date: Date, page: number = 1): Promise<any> {
     const opts = {
       page: page,
       limit: 5
     };
     return this.informModel.paginate(this.informModel.find({
-      createTime: date
+      createTime: +date.getTime()
     }), opts);
   }
-
-  // async getByDateByGroups(date: string, groups: number[]) {
-  //   const f = new Promise(resolve => {
-  //     const a = groups.map(r => this.fn(r, date));
-  //     const b = Promise.all(a);
-  //     resolve(b);
-  //   });
-  //   return await f;
-  // }
-  //
-  // async getByDateByStuId(date: string, stuId: number) {
-  //   // check if groups field exists
-  //   const groups = await this.userService.getGroupsByStuId(stuId);
-  //   if (groups == null) throw new ResponseError("该用户学号错误或未添加群组！");
-  //   const f = new Promise(resolve => {
-  //     const a = groups.map(r => this.fn(r, date));
-  //     const b = Promise.all(a);
-  //     resolve(b);
-  //   });
-  //   return await f;
-  // }
 
   @logging({
     errMsg: "创建通知失败！"
@@ -103,12 +102,12 @@ export class InformService {
     inform.creatorName = await this.userService.getRealNameByStuId(stuId);
     const mapping = await this.groupService.getGroupElement() as any[];
     for (let group of inform.relatedGroup) {
-      group.groupName = mapping.find(x => (x.groupId == group.groupId)).groupName;
+      group.name = mapping.find(x => (x.groupId == group.groupId)).name;
     }
-    console.log(inform);
     return new this.informModel(inform).save();
   }
 
+  @logging()
   async update(inform: Inform): Promise<boolean> {
     const res = await this.informModel.updateOne({
       informId: inform.informId
@@ -116,6 +115,7 @@ export class InformService {
     return res.n && res.nModified > 0;
   }
 
+  @logging()
   async delete(id: number) {
     return this.informModel.deleteOne({
       informId: id

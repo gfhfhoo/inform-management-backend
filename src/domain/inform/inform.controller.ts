@@ -18,8 +18,13 @@ export class InformController {
   }
 
   private wrap(source: any) {
+    if(!source.docs) return source;
     source.docs = source.docs.map(d => ({
-      ...d._doc, isRead: d.hasRead.includes(stuId)
+      ...d._doc,
+      isRead: d.hasRead.includes(stuId),
+      isExpired: d._doc.deadline < (+new Date()),
+      createTime: this.informService.standardizeTime(d._doc.createTime),
+      deadline: this.informService.standardizeTime(d._doc.deadline)
     }));
     return source;
   }
@@ -79,7 +84,8 @@ export class InformController {
   @Get("getMyInformByDate")
   async getMyInformByDate(@Query("date") date: string,
                           @stuId() stuId: number) {
-    const res = await this.informService.getByDate(date);
+    // 转一下成yyyy/mm/dd  免得new错误
+    const res = await this.informService.getByDate(new Date(date.replace("-", "/")));
     return this.wrap(res);
   }
 
@@ -101,6 +107,16 @@ export class InformController {
   @Post("deleteUploadedImage")
   async deleteImage(@Body() body: object) {
     return await this.uploadService.delete(dirname, body["img"]);
+  }
+
+  @api({
+    desc: "根据排序获取我的所有通知"
+  })
+  @Get("getMyInformByOrder")
+  async getMyInformByOrder(@Query("order") order: number,
+                           @stuId() stuId: number) {
+    const res = await this.informService.getMyAllInform(stuId, order);
+    return this.wrap(res);
   }
 
   // @Get("tt")
