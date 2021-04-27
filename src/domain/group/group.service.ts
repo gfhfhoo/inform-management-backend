@@ -18,6 +18,15 @@ export class GroupService {
               @Inject(forwardRef(() => UserService)) private readonly userService: UserService) {
   }
 
+  standardizeTime(timestamp: number) {
+    if (!timestamp) return null;
+    const date = new Date(timestamp);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
   @logging()
   async getGroupElement() {
     const cache = await this.redis.get("group_cache") as object[];
@@ -47,35 +56,34 @@ export class GroupService {
       const queryRes = await this.redis.get("G" + id);
       if (queryRes != undefined) return queryRes["friendCode"];
       const code = await this.utils.nextFriendCode();
-      await this.redis.add(code, {
-        groupId: id
+      await this.redis.add("G" + id, {
+        friendCode: code
       }, 259200);
       return code;
     } else throw new ResponseError("群组ID非法", HttpCode.REQUEST_REFUSED);
   };
 
   @logging()
-  async getMyGroups(stuId: number): Promise<object[]> {
-    let res = [];
-    const groups: any[] = await new Promise(((resolve, reject) => {
+  async getMyGroups(stuId: number) {
+    // let res = [];
+    // groups.map((value => {
+    //   res.push(<GroupElement>{
+    //     groupId: value.groupId,
+    //     name: value.name
+    //   });
+    // }));
+    return await new Promise(((resolve, reject) => {
       this.groupModel.find({
         members: { $elemMatch: { $eq: stuId } }
-      }).exec((err, data) => {
+      }).sort({ groupId: 1 }).exec((err, data) => {
         if (err) reject(err);
         else resolve(data);
       });
     }));
-    groups.map((value => {
-      res.push(<GroupElement>{
-        groupId: value.groupId,
-        name: value.name
-      });
-    }));
-    return res;
   }
 
   @logging()
-  async getGroupDetail(groupId: number): Promise<Group> {
+  async getGroupDetail(groupId: number): Promise<any> {
     return this.groupModel.findOne({
       groupId: groupId
     });
@@ -102,11 +110,12 @@ export class GroupService {
   async insert(group: Group, stuId: number) {
     group.creator = stuId;
     group.admins.push(Number(stuId));
-    group.creatorName = await this.userService.getRealNameByStuId(stuId);
+    group.creatorName = (await this.userService.getRealNameByStuId([stuId]))[0];
     group.members.push(Number(stuId));
     return new this.groupModel(group).save();
   }
 
+  @logging()
   async updateGroupCache() {
     const queryRes = await this.groupModel.find();
     let mapping: GroupElement[] = [];
@@ -126,6 +135,7 @@ export class GroupService {
     });
   }
 
+  @logging()
   async checkRoleByStuId(stuId: number, groupId: number) {
     let queryRes = await this.getGroupDetail(groupId);
     const roleList = queryRes.admins;
@@ -133,6 +143,7 @@ export class GroupService {
     return roleList.includes(stuId);
   }
 
+  @logging()
   async getMyAdminOfGroups(stuId: number) {
     const groups: any[] = await new Promise(((resolve, reject) => {
       this.groupModel.find({

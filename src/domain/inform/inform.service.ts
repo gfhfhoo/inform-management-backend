@@ -40,7 +40,7 @@ export class InformService {
   @logging()
   async getMyAllInform(stuId: number, order: Order): Promise<any> {
     const map = OrderToField(order);
-    let groups = await this.userService.getGroupsByStuId(stuId);
+    let groups = await this.userService.getGroupsByStuId(stuId) as any[];
     if (groups == null) throw new ResponseError("该用户学号错误或未添加群组！", HttpCode.REQUEST_REFUSED);
     groups = groups.map((value: any) => {
       return value.groupId;
@@ -74,32 +74,35 @@ export class InformService {
 
   @logging()
   async getByInformId(informId: number): Promise<Object> {
-    // if (typeof informId == "string") informId = Number.parseInt(informId);
-    let res = await this.informModel.findOne({
+    let res = (await this.informModel.find({
       informId: informId
-    });
-    const name = await this.userService.getRealNameByStuId(res.creator);
-    return { res, name };
+    }))[0];
+    const name = (await this.userService.getRealNameByStuId([res.creator]))[0];
+    return [res, name];
   }
 
   @logging()
   @paginate()
-  async getByDate(date: Date, page: number = 1): Promise<any> {
+  async getByDate(date: Date, page: number = 1, order: Order): Promise<any> {
+    const sort = OrderToField(order);
     const opts = {
       page: page,
       limit: 5
     };
     return this.informModel.paginate(this.informModel.find({
       createTime: +date.getTime()
-    }), opts);
+    }).sort(sort), opts);
   }
 
-  @logging({
-    errMsg: "创建通知失败！"
-  })
+  @logging()
   async insert(inform: Inform, stuId: number): Promise<Inform> {
     inform.creator = stuId;
-    inform.creatorName = await this.userService.getRealNameByStuId(stuId);
+    // inform.hasRead.push(stuId);
+    inform.creatorName = (await this.userService.getRealNameByStuId([stuId]))[0];
+    // 限制deadline
+    if (inform.deadline) {
+      if (inform.deadline < inform.createTime) throw new ResponseError("截止日期不符合规范", HttpCode.REQUEST_REFUSED);
+    }
     const mapping = await this.groupService.getGroupElement() as any[];
     for (let group of inform.relatedGroup) {
       group.name = mapping.find(x => (x.groupId == group.groupId)).name;

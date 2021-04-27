@@ -1,8 +1,10 @@
 import { HttpService, Injectable } from "@nestjs/common";
+import { RedisService } from "../redis/redis.service";
 
 @Injectable()
 export class AuthorService {
-  constructor(private httpService: HttpService) {
+  constructor(private httpService: HttpService,
+              private readonly redis: RedisService) {
   }
 
   private appId: string = "wx15a26fbbc963b6b9";
@@ -16,4 +18,12 @@ export class AuthorService {
       return null;
     }
   }
+
+  // async imgCheck(){
+  //
+  // }
+  //
+  // async msgCheck(msg: string) {
+  //   const accessToken = await this.redis.get("access_token");
+  // }
 }

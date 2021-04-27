@@ -20,4 +20,8 @@ export class RedisService {
     await this.cacheManager.del(key);
   }
 
+  async set(key: any, val: any, ttl: number) {
+    await this.cacheManager.set(key, val, ttl);
+  }
+
 }

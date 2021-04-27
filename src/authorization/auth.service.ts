@@ -17,7 +17,6 @@ interface JWT {
 
 interface LoginRet {
   session: string,
-  stuId: number,
   isRegister: boolean
 }
 
@@ -46,16 +45,25 @@ export class AuthService {
     const key = await this.redisService.get(openId);
     if (key) {
       // 查询JWT时间戳是否即将过期（小于6小时）
-      // let extendPayload = this.jwtService.decode(key["thirdKey"], {
-      //   json: true
-      // });
-      // let jwtToken = this.jwtService.sign(extendPayload, {
-      //   expiresIn: "48d"
-      // });
+      let jwtToken = key["thirdKey"];
+      let extendPayload = this.jwtService.decode(jwtToken, {
+        json: true
+      });
+      if (extendPayload["exp"] - extendPayload["iat"] <= 21600) {
+        jwtToken = this.jwtService.sign({ stuId: extendPayload["stuId"] }, {
+          expiresIn: "2 days"
+        });
+        const updatedVal = {
+          sessionKey: sessionKey,
+          thirdKey: jwtToken
+        };
+        await this.redisService.set(openId, updatedVal, 172600);
+      }
       return {
-        session: key["thirdKey"], //返回JWT
+        session: jwtToken, //返回新的/未即将过期的JWT
         isRegister: true
       };
+
     }// 查到返回三方key
     // 根据微信用户唯一标识换取数据库学号信息
     const queryRes = (await this.userService.getStuIdByOpenId(openId))[0];
@@ -63,7 +71,7 @@ export class AuthService {
     if (queryRes) stuId = queryRes.stuId;
     // 判断stuId是否不存在
     if (stuId == null) {
-      // 抛出异常，返回给用户提示需要进行绑定
+      // 返回给用户提示需要进行绑定
       return {
         desc: "未检测到用户在数据库的信息，请注册绑定！",
         isRegister: false
@@ -74,17 +82,15 @@ export class AuthService {
       stuId: stuId
     };
     const token = this.jwtService.sign(payload, {
-      expiresIn: "48d"
+      expiresIn: "2 days"
     });
     const val = {
       sessionKey: sessionKey,
       thirdKey: token
     };
     await this.redisService.add(openId, val, 172600);
-    console.log(token, this.jwtService.decode(token));
     return <LoginRet>{
       session: token, // 返回JWT
-      stuId: stuId,
       isRegister: true
     };
   }

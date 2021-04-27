@@ -51,7 +51,7 @@ export class Group {
   })
   members: number[] = [];
   @Prop()
-  avatarImg: string = "";
+  avatarImg: string = "defaultCover.jpg";
   @Prop({
     required: true
   })

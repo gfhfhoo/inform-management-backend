@@ -36,17 +36,20 @@ export class UserService {
     return (await this.userRepo.query(`SELECT * FROM users WHERE stuId = "${stuId}"`))[0];
   }
 
-  async getRealNameByStuId(stuId: number) {
-    if (stuId == null) throw new ResponseError("请求结果失败");
+  async getRealNameByStuId(stuId: number[]) {
+    if (stuId == null || stuId.length == 0) throw new ResponseError("请求结果失败");
     const cache = <UserElement[]>await this.redisService.get("user_cache");
+    let res: string[] = [];
     if (cache) {
-      const cache_res = cache.find(x => (x.stuId == stuId));
-      if (cache_res) return cache_res.realName;
+      stuId.forEach(value => {
+        const cache_res = cache.find(x => (x.stuId == value));
+        if (cache_res) res.push(cache_res.realName);
+      });
+      return res
     }
     await this.updateUserCache();
-    const res = await this.isExistedByStuId(stuId);
-    if (res == null) throw new ResponseError("请求结果失败");
-    return res.realName;
+    res = await this.getRealNameByStuId(stuId);
+    return res;
   }
 
   @logging()

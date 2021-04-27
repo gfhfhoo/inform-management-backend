@@ -7,6 +7,7 @@ import { CLogger } from "./logger/logger.service";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+
   // app.useGlobalGuards()
   // app.useLogger(new CLogger());
   app.useGlobalInterceptors(new ResponseInterceptor());

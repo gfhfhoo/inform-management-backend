@@ -17,12 +17,12 @@ export class InformController {
               private readonly uploadService: UploadService) {
   }
 
-  private wrap(source: any) {
-    if(!source.docs) return source;
+  private wrap(source: any, stuId: number) {
+    if (!source.docs) return source;
     source.docs = source.docs.map(d => ({
       ...d._doc,
       isRead: d.hasRead.includes(stuId),
-      isExpired: d._doc.deadline < (+new Date()),
+      isExpired: d._doc.deadline ? d._doc.deadline < (+new Date()) : false,
       createTime: this.informService.standardizeTime(d._doc.createTime),
       deadline: this.informService.standardizeTime(d._doc.deadline)
     }));
@@ -33,14 +33,14 @@ export class InformController {
   @api({
     desc: "某人已读信息，回传至服务器"
   })
-  @UseGuards(JwtAuthGuard)
-  @Post("read")
+  // @UseGuards(JwtAuthGuard)
+  @Get("read")
   async read(@Query("informId") informId: number,
              @stuId() stuId: number) {
-    const inform = (await this.informService.getByInformId(informId))[0];
-    if (inform["hasRead"].includes(stuId)) return false;
+    const inform = (await this.informService.getByInformId(informId))[0] as Inform;
+    if (inform.hasRead.includes(stuId)) return false;
     else {
-      inform["hasRead"].push(stuId);
+      inform.hasRead.push(stuId);
       return await this.informService.update(inform);
     }
   }
@@ -60,7 +60,7 @@ export class InformController {
   @api({
     desc: "添加发布通知"
   })
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @Post("addInform")
   async createInform(@inform() inform: Inform,
                      @stuId() stuId: number) {
@@ -72,9 +72,10 @@ export class InformController {
   })
   // @UseGuards(JwtAuthGuard)
   @Get("getMyInformByGroup")
-  async getMyInform(@Query("groupId") group: number) {
+  async getMyInform(@Query("groupId") group: number,
+                    @stuId() stuId: number) {
     const res = await this.informService.getByGroup(group);
-    return this.wrap(res);
+    return this.wrap(res, stuId);
   }
 
   @api({
@@ -82,11 +83,13 @@ export class InformController {
   })
   @UseGuards(JwtAuthGuard)
   @Get("getMyInformByDate")
-  async getMyInformByDate(@Query("date") date: string,
-                          @stuId() stuId: number) {
+  async getMyInformByDate(@stuId() stuId: number,
+                          @Query("date") date: string,
+                          @Query("page") page?: number,
+                          @Query("order") order: number = 3) {
     // 转一下成yyyy/mm/dd  免得new错误
-    const res = await this.informService.getByDate(new Date(date.replace("-", "/")));
-    return this.wrap(res);
+    const res = await this.informService.getByDate(new Date(date.replace("-", "/")), page, order);
+    return this.wrap(res, stuId);
   }
 
 
@@ -116,7 +119,7 @@ export class InformController {
   async getMyInformByOrder(@Query("order") order: number,
                            @stuId() stuId: number) {
     const res = await this.informService.getMyAllInform(stuId, order);
-    return this.wrap(res);
+    return this.wrap(res, stuId);
   }
 
   // @Get("tt")

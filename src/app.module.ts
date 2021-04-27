@@ -10,6 +10,8 @@ import { UserModule } from "./domain/user/user.module";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { ScheduleModule } from "@nestjs/schedule";
 import { TaskModule } from "./task/task.module";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { APP_GUARD } from "@nestjs/core";
 
 const URL = "49.232.223.89";
 const dirname = "/home/sipc-ubuntu/project/dist/upload";
@@ -33,9 +35,17 @@ const dirname = "/home/sipc-ubuntu/project/dist/upload";
   })), ServeStaticModule.forRoot({
     rootPath: dirname,
     renderPath: "233"
-  }), ScheduleModule.forRoot(), AuthorModule, InformModule, RedisModule, UtilsModule, GroupModule, UserModule, TaskModule],
+  }), ThrottlerModule.forRootAsync(({
+    useFactory: () => ({
+      ttl: 60,
+      limit: 100
+    })
+  })), ScheduleModule.forRoot(), AuthorModule, InformModule, RedisModule, UtilsModule, GroupModule, UserModule, TaskModule],
   controllers: [],
-  providers: []
+  providers: [{
+    provide: APP_GUARD,
+    useClass: ThrottlerGuard
+  }]
 })
 export class AppModule {
 }

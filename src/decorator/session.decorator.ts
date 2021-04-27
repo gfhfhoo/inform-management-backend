@@ -6,9 +6,9 @@ import { HttpCode } from "../enum/httpCode.enum";
 // 这里的所有装饰器配合UserGuard使用
 function getSession(ctx: ExecutionContext) {
   const req = ctx.switchToHttp().getRequest();
-  const session = req.headers["session"] as string;
-  if (session == null || session == "") throw new ResponseError("没有Session会话！", HttpCode.NO_SESSION);
-  else return session;
+  // if (session == null || session == "") throw new ResponseError("没有Session会话！", HttpCode.NO_SESSION);
+  // else return session;
+  return req.headers["session"] as string;
 }
 
 export const session = createParamDecorator(
