@@ -1,7 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
 import { HttpCode } from "../enum/httpCode.enum";
 import { ResponseError } from "../error/custom.error";
-import { CLogger } from "../logger/logger.service";
 
 interface ErrorResponse {
   code: HttpCode,
@@ -28,7 +27,7 @@ export class ErrorFilter implements ExceptionFilter {
         else return exception.message;
       } else {
         errCode = HttpCode.ERROR;
-        new CLogger()._err(exception.message);
+        // new CLogger()._err(exception.message);
         return "请求错误或内部服务器错误";
       }
     };

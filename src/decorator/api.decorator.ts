@@ -1,5 +1,6 @@
 interface APIOptions {
-  desc: string
+  desc?: string,
+  checked?: boolean
 }
 
 export const api = (options: APIOptions): MethodDecorator => {

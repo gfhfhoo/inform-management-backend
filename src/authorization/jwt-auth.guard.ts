@@ -12,7 +12,7 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
 
   handleRequest(err, user, info): any {
     if (err || !user) {
-      throw new ResponseError("该Session不是有效的会话，请检查Session！", HttpCode.NO_SESSION);
+      throw new ResponseError("没有有效的会话，请检查Session！", HttpCode.NO_SESSION);
     }
   }
 }

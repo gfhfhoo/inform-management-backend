@@ -6,7 +6,6 @@ import { api } from "../../decorator/api.decorator";
 import { stuId } from "src/decorator/session.decorator";
 import { JwtAuthGuard } from "../../authorization/jwt-auth.guard";
 import { UserService } from "../user/user.service";
-import { UserElement } from "../user/user.entity";
 
 
 @Controller()
@@ -15,26 +14,17 @@ export class GroupController {
               private readonly userService: UserService) {
   }
 
-  fn = async (stuId: number[]) => {
-    let res: UserElement[] = [];
-    const realName = await this.userService.getRealNameByStuId(stuId) as any[];
-    stuId.map((value, index) => {
-      res.push({
-        stuId: value,
-        realName: realName[index]
-      });
-    });
-    // console.log(res);
-    return res;
-  };
-
+  @api({
+    desc: "进行返回前的包装",
+    checked: true
+  })
   private async wrap(source: any) {
     if (source.length == 0) return source;
     let rt1: any[] = [];
     let rt2: any[] = [];
     source.map(d => {
-      rt1.push(this.fn(d._doc.members));
-      rt2.push(this.fn(d._doc.admins));
+      rt1.push(this.userService.standardizeStuId(d._doc.members));
+      rt2.push(this.userService.standardizeStuId(d._doc.admins));
     });
     rt1 = await Promise.all(rt1);
     rt2 = await Promise.all(rt2);
@@ -49,7 +39,8 @@ export class GroupController {
 
   //TESTED
   @api({
-    desc: "创建群组"
+    desc: "创建群组",
+    checked: true
   })
   @UseGuards(JwtAuthGuard)
   @Post("createGroup")

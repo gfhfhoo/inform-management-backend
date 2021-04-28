@@ -83,14 +83,21 @@ export class InformService {
 
   @logging()
   @paginate()
-  async getByDate(date: Date, page: number = 1, order: Order): Promise<any> {
+  async getByDate(date: Date, page: number = 1, order: Order, stuId: number): Promise<any> {
     const sort = OrderToField(order);
     const opts = {
       page: page,
       limit: 5
     };
+    let userInGroups = [];
+    const groups = await this.groupService.getMyGroups(stuId) as any[];
+    groups.map(value => {
+      if (value.members.includes(stuId)) userInGroups.push(value.groupId);
+    });
+    // console.log(userInGroups);
     return this.informModel.paginate(this.informModel.find({
-      createTime: +date.getTime()
+      createTime: +date.getTime(),
+      relatedGroup: { $elemMatch: { groupId: { $in: userInGroups } } }
     }).sort(sort), opts);
   }
 
@@ -104,6 +111,7 @@ export class InformService {
       if (inform.deadline < inform.createTime) throw new ResponseError("截止日期不符合规范", HttpCode.REQUEST_REFUSED);
     }
     const mapping = await this.groupService.getGroupElement() as any[];
+    console.log("zheli");
     for (let group of inform.relatedGroup) {
       group.name = mapping.find(x => (x.groupId == group.groupId)).name;
     }
@@ -123,5 +131,13 @@ export class InformService {
     return this.informModel.deleteOne({
       informId: id
     });
+  }
+
+  async getMembersIntersection(...members) {
+    const res = new Set();
+    members.forEach((member: number[]) => {
+      member.forEach(value => res.add(value));
+    });
+    return res;
   }
 }

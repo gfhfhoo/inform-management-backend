@@ -33,7 +33,7 @@ export class InformController {
   @api({
     desc: "某人已读信息，回传至服务器"
   })
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get("read")
   async read(@Query("informId") informId: number,
              @stuId() stuId: number) {
@@ -60,7 +60,7 @@ export class InformController {
   @api({
     desc: "添加发布通知"
   })
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post("addInform")
   async createInform(@inform() inform: Inform,
                      @stuId() stuId: number) {
@@ -70,7 +70,7 @@ export class InformController {
   @api({
     desc: "根据群组获取信息"
   })
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get("getMyInformByGroup")
   async getMyInform(@Query("groupId") group: number,
                     @stuId() stuId: number) {
@@ -88,7 +88,7 @@ export class InformController {
                           @Query("page") page?: number,
                           @Query("order") order: number = 3) {
     // 转一下成yyyy/mm/dd  免得new错误
-    const res = await this.informService.getByDate(new Date(date.replace("-", "/")), page, order);
+    const res = await this.informService.getByDate(new Date(date.replace("-", "/")), page, order, stuId);
     return this.wrap(res, stuId);
   }
 
@@ -115,6 +115,7 @@ export class InformController {
   @api({
     desc: "根据排序获取我的所有通知"
   })
+  @UseGuards(JwtAuthGuard)
   @Get("getMyInformByOrder")
   async getMyInformByOrder(@Query("order") order: number,
                            @stuId() stuId: number) {

@@ -7,6 +7,7 @@ import { UserService } from "../domain/user/user.service";
 import { ResponseError } from "../error/custom.error";
 import { HttpCode } from "../enum/httpCode.enum";
 import { logging } from "../decorator/log.decorator";
+import { api } from "../decorator/api.decorator";
 
 interface JWT {
   sub: string,
@@ -29,6 +30,10 @@ export class AuthService {
               private readonly utils: UtilsService) {
   }
 
+  @api({
+    desc: "请求login",
+    checked: true
+  })
   @logging()
   async login(jsCode: string) {
     // 检查JSCode
@@ -37,19 +42,23 @@ export class AuthService {
     const response = await this.authorService.requestWx(jsCode);
     // 获取微信返回的Session
     const data = response.data;
+    // data期望请求结果包括session_key和openid
     const sessionKey = data["session_key"];
     const openId = data["openid"];// 区分每个微信用户，与数据库的学号进行绑定
-    // 检查微信返回是否包含了用户信息
+    // 检查微信返回是否的确包含了用户信息
     if (sessionKey == null || openId == null) throw new ResponseError("服务端向微信请求JS_CODE时发生错误，请过一会重试。");
-    // 判断当前用户的Session是否存在Redis中
+    // 判断当前用户的OpenId是否存在Redis中
     const key = await this.redisService.get(openId);
+    // 检验逻辑
     if (key) {
+      // 说明登陆过 且 登录还在时效内
       // 查询JWT时间戳是否即将过期（小于6小时）
       let jwtToken = key["thirdKey"];
       let extendPayload = this.jwtService.decode(jwtToken, {
         json: true
       });
       if (extendPayload["exp"] - extendPayload["iat"] <= 21600) {
+        // 即将过期
         jwtToken = this.jwtService.sign({ stuId: extendPayload["stuId"] }, {
           expiresIn: "2 days"
         });
@@ -59,12 +68,13 @@ export class AuthService {
         };
         await this.redisService.set(openId, updatedVal, 172600);
       }
+      // 未过期的token/新的token到这
       return {
         session: jwtToken, //返回新的/未即将过期的JWT
         isRegister: true
       };
-
-    }// 查到返回三方key
+    }
+    // 没有登录/新用户
     // 根据微信用户唯一标识换取数据库学号信息
     const queryRes = (await this.userService.getStuIdByOpenId(openId))[0];
     let stuId = null;
@@ -72,12 +82,12 @@ export class AuthService {
     // 判断stuId是否不存在
     if (stuId == null) {
       // 返回给用户提示需要进行绑定
-      return {
+      throw new ResponseError({
         desc: "未检测到用户在数据库的信息，请注册绑定！",
         isRegister: false
-      };
+      }, HttpCode.NOT_REGISTERED);
     }
-    // 通过Login方法后的Value
+    // 发现是旧用户
     const payload = {
       stuId: stuId
     };

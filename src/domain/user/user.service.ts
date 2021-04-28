@@ -7,6 +7,8 @@ import { RedisService } from "../../redis/redis.service";
 import { logging } from "../../decorator/log.decorator";
 import { CLogger } from "../../logger/logger.service";
 import { AuthorService } from "../../authorization/author.service";
+import { HttpCode } from "../../enum/httpCode.enum";
+import { api } from "../../decorator/api.decorator";
 
 @Injectable()
 export class UserService {
@@ -19,6 +21,19 @@ export class UserService {
   // async getRoleByOpenId(openId: string) {
   //   return this.userRepo.query(`SELECT role_id FROM user_role INNER JOIN users ON "wxid" = ${openId}`);
   // }
+
+  async standardizeStuId(stuId: number[]) {
+    let res: UserElement[] = [];
+    const realName = await this.getRealNameByStuId(stuId) as any[];
+    stuId.map((value, index) => {
+      res.push({
+        stuId: value,
+        realName: realName[index]
+      });
+    });
+    // console.log(res);
+    return res;
+  }
 
   async getAll() {
     return this.userRepo.query(`SELECT * FROM users`);
@@ -36,6 +51,27 @@ export class UserService {
     return (await this.userRepo.query(`SELECT * FROM users WHERE stuId = "${stuId}"`))[0];
   }
 
+  @api({
+    checked: true
+  })
+  @logging()
+  async getMyInfoByStuId(stuId: number) {
+    if (stuId == null) throw new ResponseError("请求结果失败");
+    const cache = <UserElement[]>await this.redisService.get("user_cache");
+    console.log(cache);
+    if (cache) {
+      const cache_res = cache.find(x => (x.stuId == stuId));
+      if (cache_res) return cache_res;
+      else return null;
+    }
+    await this.updateUserCache();
+    throw new ResponseError("服务器繁忙，请稍后再试", HttpCode.REQUEST_REFUSED);
+  }
+
+  @api({
+    checked: true
+  })
+  @logging()
   async getRealNameByStuId(stuId: number[]) {
     if (stuId == null || stuId.length == 0) throw new ResponseError("请求结果失败");
     const cache = <UserElement[]>await this.redisService.get("user_cache");
@@ -45,19 +81,22 @@ export class UserService {
         const cache_res = cache.find(x => (x.stuId == value));
         if (cache_res) res.push(cache_res.realName);
       });
-      return res
+      return res;
     }
     await this.updateUserCache();
-    res = await this.getRealNameByStuId(stuId);
-    return res;
+    throw new ResponseError("服务器繁忙，请稍后再试", HttpCode.REQUEST_REFUSED);
   }
 
+  @api({
+    checked: true
+  })
   @logging()
   async bindUser(jsCode: string, realName: string, stuId: number) {
     let wxid = null;
     const openId = (await this.authorService.requestWx(jsCode)).data["openid"];
     if (openId == null) throw new ResponseError("服务端向微信请求JS_CODE时发生错误，请过一会重试。");
     wxid = openId;
+    // 看用户是否存在数据库里
     const queryRes = await this.getStuIdByOpenId(wxid);
     if (queryRes.length != 0) throw new ResponseError("绑定用户时发生未知错误！可能重复进行了注册。");
     const user = {
